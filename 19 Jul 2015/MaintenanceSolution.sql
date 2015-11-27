@@ -1674,7 +1674,31 @@ BEGIN
           SET @CurrentCommand03 = @CurrentCommand03 + ' IF @ReturnCode <> 0 RAISERROR(''Error performing SQLsafe backup.'', 16, 1)'
         END
 
-        EXECUTE @CurrentCommandOutput03 = [dbo].[CommandExecute] @Command = @CurrentCommand03, @CommandType = @CurrentCommandType03, @Mode = 1, @DatabaseName = @CurrentDatabaseName, @ExecutionKey = @ExecutionKey, @LogToTable = @LogToTable, @Execute = @Execute
+		DECLARE @ExtendedInfo XML 
+		SET @ExtendedInfo = 
+		(SELECT TOP 100
+			m.physical_device_name as FileName,
+			CAST(CAST(s.backup_size / 1000000 AS INT) AS VARCHAR(14)) + ' ' + 'MB' AS BackupSize,
+			CAST(DATEDIFF(second, s.backup_start_date,
+			s.backup_finish_date) AS VARCHAR(4)) + ' ' + 'Seconds' TimeTaken,
+			s.backup_start_date as BackupStartDate,
+			CAST(s.first_lsn AS VARCHAR(50)) AS FirstLSN,
+			CAST(s.last_lsn AS VARCHAR(50)) AS LastLSN,
+			CASE s.[type]
+			WHEN 'D' THEN 'Full'
+			WHEN 'I' THEN 'Differential'
+			WHEN 'L' THEN 'Transaction Log'
+			END AS BackupType,
+			s.server_name as ServerName,
+			s.recovery_model as RecoveryModel
+		FROM 
+			msdb.dbo.backupset s
+			INNER JOIN msdb.dbo.backupmediafamily m ON s.media_set_id = m.media_set_id
+			inner join @CurrentFiles as t on m.physical_device_name = t.FilePath
+		WHERE t.Mirror = 0
+		FOR XML RAW ('File'), ROOT('Files'), ELEMENTS)
+
+        EXECUTE @CurrentCommandOutput03 = [dbo].[CommandExecute] @Command = @CurrentCommand03, @CommandType = @CurrentCommandType03, @Mode = 1, @DatabaseName = @CurrentDatabaseName, @ExtendedInfo = @ExtendedInfo, @ExecutionKey = @ExecutionKey, @LogToTable = @LogToTable, @Execute = @Execute
         SET @Error = @@ERROR
         IF @Error <> 0 SET @CurrentCommandOutput03 = @Error
         IF @CurrentCommandOutput03 <> 0 SET @ReturnCode = @CurrentCommandOutput03
@@ -1761,7 +1785,31 @@ BEGIN
             SET @CurrentCommand04 = @CurrentCommand04 + ' IF @ReturnCode <> 0 RAISERROR(''Error verifying SQLsafe backup.'', 16, 1)'
           END
 
-          EXECUTE @CurrentCommandOutput04 = [dbo].[CommandExecute] @Command = @CurrentCommand04, @CommandType = @CurrentCommandType04, @Mode = 1, @DatabaseName = @CurrentDatabaseName, @ExecutionKey = @ExecutionKey, @LogToTable = @LogToTable, @Execute = @Execute
+		  DECLARE @ExtendedInfo2 XML 
+			SET @ExtendedInfo2 = 
+			(SELECT TOP 100
+				m.physical_device_name as FileName,
+				CAST(CAST(s.backup_size / 1000000 AS INT) AS VARCHAR(14)) + ' ' + 'MB' AS BackupSize,
+				CAST(DATEDIFF(second, s.backup_start_date,
+				s.backup_finish_date) AS VARCHAR(4)) + ' ' + 'Seconds' TimeTaken,
+				s.backup_start_date as BackupStartDate,
+				CAST(s.first_lsn AS VARCHAR(50)) AS FirstLSN,
+				CAST(s.last_lsn AS VARCHAR(50)) AS LastLSN,
+				CASE s.[type]
+				WHEN 'D' THEN 'Full'
+				WHEN 'I' THEN 'Differential'
+				WHEN 'L' THEN 'Transaction Log'
+				END AS BackupType,
+				s.server_name as ServerName,
+				s.recovery_model as RecoveryModel
+			FROM 
+				msdb.dbo.backupset s
+				INNER JOIN msdb.dbo.backupmediafamily m ON s.media_set_id = m.media_set_id
+				inner join @CurrentFiles as t on m.physical_device_name = t.FilePath
+			WHERE t.Mirror = 0
+			FOR XML RAW ('File'), ROOT('Files'), ELEMENTS)
+
+          EXECUTE @CurrentCommandOutput04 = [dbo].[CommandExecute] @Command = @CurrentCommand04, @CommandType = @CurrentCommandType04, @Mode = 1, @DatabaseName = @CurrentDatabaseName, @ExtendedInfo = @ExtendedInfo2, @ExecutionKey = @ExecutionKey, @LogToTable = @LogToTable, @Execute = @Execute
           SET @Error = @@ERROR
           IF @Error <> 0 SET @CurrentCommandOutput04 = @Error
           IF @CurrentCommandOutput04 <> 0 SET @ReturnCode = @CurrentCommandOutput04
