@@ -31,4 +31,5 @@ Note: I have used these automation in a log shipping solution restore automation
 ## Versioning
 
 For every release of Ola Hallengren there will be a new folder. 
+
 For possible bug in my work commit history will be enough. 
