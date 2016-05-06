@@ -28,6 +28,14 @@ foreach($t_line in $template)
     {
         (Get-Content -Path IndexOptimize.sql) | ForEach-Object -Process { Add-Content -Path $scriptFile -Value $_ }
     }
+    elseif($t_line -eq "PRINT '[[DatabaseRestore_SPCreation_Script]]'")
+    {
+        (Get-Content -Path DatabaseRestore.sql) | ForEach-Object -Process { Add-Content -Path $scriptFile -Value $_ }
+    }
+    elseif($t_line -eq "PRINT '[[DatabaseRestoreMany_SPCreation_Script]]'")
+    {
+        (Get-Content -Path DatabaseRestoreMany.sql) | ForEach-Object -Process { Add-Content -Path $scriptFile -Value $_ }
+    }
     else
     {
         Add-Content -Path $scriptFile -Value $t_line
